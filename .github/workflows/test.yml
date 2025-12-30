@@ -5,6 +5,10 @@ on:
       - "**/*.py"
       - ".github/**/*.ya?ml"
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,6 +49,12 @@ jobs:
           path: dist/
       - name: Install package and run tests
         run: |
-          uv venv
-          uv pip install dist/*.whl pytest
-          uv run --no-sync pytest
+          uv sync --only-dev
+          uv install dist/*.whl
+          mkdir reports
+          uv run --no-sync pytest --cov=imagingservices --cov-report=term --cov-report=xml --junitxml=reports/junit.xml | tee reports/pytest-coverage.txt
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./reports/ytest-coverage.txt
+          junitxml-path: ./reports/junit.xml
