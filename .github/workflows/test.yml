@@ -52,7 +52,7 @@ jobs:
           uv sync --only-dev
           uv pip install dist/*.whl
           mkdir reports
-          uv run --no-sync pytest --cov=imagingservices --cov-report=term --cov-report=xml --junitxml=reports/junit.xml --color=no | tee reports/pytest-coverage.txt
+          uv run --no-sync pytest --cov=imagingservices --cov-report=term --cov-report=xml --junitxml=reports/junit.xml | tee reports/pytest-coverage.txt
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
