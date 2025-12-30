@@ -56,5 +56,5 @@ jobs:
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./reports/ytest-coverage.txt
+          pytest-coverage-path: ./reports/pytest-coverage.txt
           junitxml-path: ./reports/junit.xml
