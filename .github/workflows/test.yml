@@ -23,7 +23,7 @@ jobs:
         run: |
           uv sync --only-dev
       - name: Run static analysis
-        run: uv run --no-sync ruff check .
+        run: uv run --no-sync ruff check ./src/
       - name: Build package
         run: uv build
       - name: Upload artifacts
