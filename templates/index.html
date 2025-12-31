@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>矩形描画アプリ - Step 1</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #preview-area {
+            margin-top: 20px;
+            border: 2px dashed #ccc;
+            padding: 10px;
+            min-height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>画像アップロード</h1>
+
+    <form hx-post="/upload" hx-encoding="multipart/form-data" hx-target="#preview-area">
+        <input type="file" name="file" accept="image/*">
+        <button type="submit">表示する</button>
+    </form>
+
+    <div id="preview-area">
+        <p>画像を選択してください</p>
+    </div>
+</body>
+
+</html>
