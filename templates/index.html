@@ -31,6 +31,32 @@
       max-width: 800px;
       /* 画面に収まるサイズに */
     }
+
+    #coords {
+      margin: 10px 0;
+    }
+
+    .click-marker {
+      position: absolute;
+      background-color: rgba(0, 0, 255, 0.7);
+      color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    #drag-coords,
+    #drag-start-coords {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+    }
   </style>
 </head>
 
@@ -42,6 +68,9 @@
     <button type="submit">アップロード</button>
   </form>
 
+  <div id="coords">座標: -</div>
+  <div id="drag-coords"></div>
+  <div id="drag-start-coords"></div>
   <div id="preview-area"></div>
 
   <script>
@@ -65,29 +94,99 @@
         const ctx = canvas.getContext('2d');
         let startX, startY, isDrawing = false;
 
+        // 矩形情報とマーカー管理
+        let savedRect = null;
+        let startMarker = null;
+        let endMarker = null;
+
+        function createMarker(x, y) {
+          const m = document.createElement('div');
+          m.className = 'click-marker';
+          m.style.left = x + 'px';
+          m.style.top = y + 'px';
+          m.textContent = `(${x}, ${y})`;
+          document.getElementById('preview-area').appendChild(m);
+          return m;
+        }
+
         canvas.onmousedown = (e) => {
+          // 既存のマーカーと矩形情報をリセット
+          if (startMarker) startMarker.remove();
+          if (endMarker) endMarker.remove();
+          startMarker = null;
+          endMarker = null;
+          savedRect = null;
+
           startX = e.offsetX;
           startY = e.offsetY;
           isDrawing = true;
+
+          const dragCoords = document.getElementById('drag-coords');
+          dragCoords.textContent = `(${startX}, ${startY})`;
+          dragCoords.style.left = (e.pageX + 15) + 'px';
+          dragCoords.style.top = (e.pageY + 15) + 'px';
+          dragCoords.style.display = 'block';
+
+          const startDragCoords = document.getElementById('drag-start-coords');
+          startDragCoords.textContent = `(${startX}, ${startY})`;
+          startDragCoords.style.left = (e.pageX + 5) + 'px';
+          startDragCoords.style.top = (e.pageY + 5) + 'px';
+          startDragCoords.style.display = 'block';
         };
 
         canvas.onmousemove = (e) => {
-          if (!isDrawing) return;
+          const mouseX = e.offsetX;
+          const mouseY = e.offsetY;
 
-          // 前の描画を消して、新しい矩形を描く
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.strokeStyle = 'red';
-          ctx.lineWidth = 3;
+          // 座標を常に表示
+          document.getElementById('coords').textContent = `座標: (${mouseX}, ${mouseY})`;
 
-          const width = e.offsetX - startX;
-          const height = e.offsetY - startY;
-          ctx.strokeRect(startX, startY, width, height);
+          if (isDrawing) {
+            // ドラッグ中の追従座標表示
+            const dragCoords = document.getElementById('drag-coords');
+            dragCoords.textContent = `(${mouseX}, ${mouseY})`;
+            dragCoords.style.left = (e.pageX + 15) + 'px';
+            dragCoords.style.top = (e.pageY + 15) + 'px';
+
+            // 前の描画を消して、新しい矩形を描く
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 3;
+
+            const width = mouseX - startX;
+            const height = mouseY - startY;
+            ctx.strokeRect(startX, startY, width, height);
+          } else if (savedRect) {
+            // 矩形確定後: マウスが矩形内にあるか判定
+            const inside = (mouseX >= savedRect.x && mouseX <= savedRect.x + savedRect.w &&
+              mouseY >= savedRect.y && mouseY <= savedRect.y + savedRect.h);
+
+            const displayStyle = inside ? 'block' : 'none';
+            if (startMarker) startMarker.style.display = displayStyle;
+            if (endMarker) endMarker.style.display = displayStyle;
+          }
         };
 
         canvas.onmouseup = (e) => {
           isDrawing = false;
+          document.getElementById('drag-coords').style.display = 'none';
+          document.getElementById('drag-start-coords').style.display = 'none';
+
           const endX = e.offsetX;
           const endY = e.offsetY;
+
+          // 矩形情報を保存（正規化）
+          const x = Math.min(startX, endX);
+          const y = Math.min(startY, endY);
+          const w = Math.abs(endX - startX);
+          const h = Math.abs(endY - startY);
+
+          savedRect = { x, y, w, h };
+
+          // マーカーを作成
+          startMarker = createMarker(startX, startY);
+          endMarker = createMarker(endX, endY);
+
           console.log(`矩形確定: (${startX}, ${startY}) to (${endX}, ${endY})`);
           // ここで座標を保存する準備ができる
         };
