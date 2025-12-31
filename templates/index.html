@@ -94,6 +94,32 @@
         const ctx = canvas.getContext('2d');
         let startX, startY, isDrawing = false;
 
+        // OCR結果の描画
+        const ocrDataAttr = img.getAttribute('data-ocr');
+        if (ocrDataAttr) {
+          try {
+            const ocrData = JSON.parse(ocrDataAttr);
+            const scaleX = img.clientWidth / img.naturalWidth;
+            const scaleY = img.clientHeight / img.naturalHeight;
+
+            ctx.strokeStyle = 'lime'; // OCRの枠は明るい緑色で表示
+            ctx.lineWidth = 2;
+
+            ocrData.forEach(item => {
+              const pts = item.points;
+              ctx.beginPath();
+              ctx.moveTo(pts[0][0] * scaleX, pts[0][1] * scaleY);
+              for (let i = 1; i < pts.length; i++) {
+                ctx.lineTo(pts[i][0] * scaleX, pts[i][1] * scaleY);
+              }
+              ctx.closePath();
+              ctx.stroke();
+            });
+          } catch (e) {
+            console.error("OCR data parse error:", e);
+          }
+        }
+
         // 矩形情報とマーカー管理
         let savedRect = null;
         let startMarker = null;
