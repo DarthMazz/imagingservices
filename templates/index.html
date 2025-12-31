@@ -2,35 +2,98 @@
 <html lang="ja">
 
 <head>
-    <meta charset="UTF-8">
-    <title>矩形描画アプリ - Step 1</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-        }
+  <meta charset="UTF-8">
+  <title>矩形描画アプリ - Step 2</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
 
-        #preview-area {
-            margin-top: 20px;
-            border: 2px dashed #ccc;
-            padding: 10px;
-            min-height: 200px;
-        }
-    </style>
+    #preview-area {
+      position: relative;
+      /* 子要素の基準になる */
+      display: inline-block;
+      margin-top: 20px;
+    }
+
+    canvas {
+      position: absolute;
+      /* 画像の上に重ねる */
+      top: 0;
+      left: 0;
+      cursor: crosshair;
+    }
+
+    #target-image {
+      display: block;
+      max-width: 800px;
+      /* 画面に収まるサイズに */
+    }
+  </style>
 </head>
 
 <body>
-    <h1>画像アップロード</h1>
+  <h1>画像に矩形を描く</h1>
 
-    <form hx-post="/upload" hx-encoding="multipart/form-data" hx-target="#preview-area">
-        <input type="file" name="file" accept="image/*">
-        <button type="submit">表示する</button>
-    </form>
+  <form hx-post="/upload" hx-encoding="multipart/form-data" hx-target="#preview-area">
+    <input type="file" name="file" accept="image/*">
+    <button type="submit">アップロード</button>
+  </form>
 
-    <div id="preview-area">
-        <p>画像を選択してください</p>
-    </div>
+  <div id="preview-area"></div>
+
+  <script>
+    // HTMXが要素を入れ替えた後に実行されるイベント
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      initCanvas();
+    });
+
+    function initCanvas() {
+      const img = document.getElementById('target-image');
+      if (!img) return;
+
+      // 画像の読み込み完了を待ってからCanvasを作成
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'drawing-canvas';
+        canvas.width = img.clientWidth;
+        canvas.height = img.clientHeight;
+        document.getElementById('preview-area').appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        let startX, startY, isDrawing = false;
+
+        canvas.onmousedown = (e) => {
+          startX = e.offsetX;
+          startY = e.offsetY;
+          isDrawing = true;
+        };
+
+        canvas.onmousemove = (e) => {
+          if (!isDrawing) return;
+
+          // 前の描画を消して、新しい矩形を描く
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = 'red';
+          ctx.lineWidth = 3;
+
+          const width = e.offsetX - startX;
+          const height = e.offsetY - startY;
+          ctx.strokeRect(startX, startY, width, height);
+        };
+
+        canvas.onmouseup = (e) => {
+          isDrawing = false;
+          const endX = e.offsetX;
+          const endY = e.offsetY;
+          console.log(`矩形確定: (${startX}, ${startY}) to (${endX}, ${endY})`);
+          // ここで座標を保存する準備ができる
+        };
+      };
+    }
+  </script>
 </body>
 
 </html>
