@@ -6,9 +6,7 @@ import os
 import logging
 import json
 import aiofiles
-import easyocr
-import numpy as np
-from PIL import Image
+from imagingservices import OCRService
 
 app = FastAPI()
 
@@ -23,9 +21,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # 静的ファイル（画像）とテンプレートの設定
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
-# OCRリーダーの初期化（日本語と英語）
-reader = easyocr.Reader(["ja", "en"])
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -45,19 +40,16 @@ async def upload_image(request: Request, file: UploadFile = File(...)):
 
     # OCR実行
     logger.info("Starting OCR processing")
-    image = Image.open(file_path)
-    image_np = np.array(image)
-    results = reader.readtext(image_np)
+
+    # OCRサービスの初期化
+    ocr_service = OCRService()
+    results = ocr_service.process_image(file_path)
     logger.info(f"OCR completed. Found {len(results)} text regions")
     if len(results) > 0:
         logger.info(f"First result: {results[0]}")
 
     # 結果をJSONシリアライズ可能な形式に変換
-    ocr_data = []
-    for bbox, text, prob in results:
-        # bboxはnumpy型を含むため、標準のint型リストに変換
-        points = [[int(p[0]), int(p[1])] for p in bbox]
-        ocr_data.append({"points": points, "text": text})
+    ocr_data = ocr_service.format_results(results)
 
     # アップロードした画像を表示するためのHTML断片を返す（HTMX用）
     image_url = f"/{file_path}"

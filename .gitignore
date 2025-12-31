@@ -3,5 +3,10 @@ __pycache__/
 .venv/
 .ruff_cache/
 
+# テスト用データ
+reports/
+.coverage
+coverage.xml
+
 # アプリケーションテンポラリ
 static/uploads/
