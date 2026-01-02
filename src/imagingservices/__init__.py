@@ -1,4 +1,4 @@
-from .ocr import OCRService
+from .ocr import OCRService, OCRError
 
 
-__all__ = ["OCRService"]
+__all__ = ["OCRService", "OCRError"]
