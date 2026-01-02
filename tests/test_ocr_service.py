@@ -1,6 +1,8 @@
-import pytest
 import numpy as np
-from imagingservices import OCRService
+import pytest
+from PIL import UnidentifiedImageError
+
+from imagingservices import OCRError, OCRService
 
 
 class TestOCRService:
@@ -74,3 +76,54 @@ class TestOCRService:
 
         # 型の検証: numpy.int32 ではなく int になっているか
         assert isinstance(formatted_results[0]["points"][0][0], int)
+
+    def test_process_image_invalid_input(self, mocker):
+        """無効な入力パラメータでValueErrorが発生することを確認"""
+        # Readerの初期化をスキップするためにクラス変数をダミーで埋める
+        OCRService._reader = mocker.MagicMock()
+        service = OCRService()
+
+        # Noneの場合
+        with pytest.raises(ValueError, match="Invalid argument 'image_path'"):
+            service.process_image(None)
+
+        # 空文字の場合
+        with pytest.raises(ValueError, match="Invalid argument 'image_path'"):
+            service.process_image("")
+
+    def test_process_image_file_not_found(self, mocker):
+        """ファイルが存在しない場合にFileNotFoundErrorがそのまま送出されることを確認"""
+        OCRService._reader = mocker.MagicMock()
+        mocker.patch("imagingservices.ocr.Image.open", side_effect=FileNotFoundError)
+
+        service = OCRService()
+
+        with pytest.raises(FileNotFoundError):
+            service.process_image("non_existent.jpg")
+
+    def test_process_image_ocr_error_image(self, mocker):
+        """画像読み込みエラー時にOCRError(IMAGE_ERROR)が発生することを確認"""
+        OCRService._reader = mocker.MagicMock()
+        mocker.patch(
+            "imagingservices.ocr.Image.open", side_effect=UnidentifiedImageError
+        )
+
+        service = OCRService()
+
+        with pytest.raises(OCRError) as excinfo:
+            service.process_image("corrupted.jpg")
+        assert excinfo.value.code == OCRError.IMAGE_ERROR
+
+    def test_process_image_ocr_error_system(self, mocker):
+        """予期せぬエラー時にOCRError(SYSTEM_ERROR)が発生することを確認"""
+        OCRService._reader = mocker.MagicMock()
+        OCRService._reader.readtext.side_effect = Exception("Unexpected error")
+        mocker.patch("imagingservices.ocr.Image.open")
+        mocker.patch("imagingservices.ocr.np.array")
+
+        service = OCRService()
+
+        with pytest.raises(OCRError) as excinfo:
+            service.process_image("valid.jpg")
+        assert excinfo.value.code == OCRError.SYSTEM_ERROR
+        assert excinfo.value.code == OCRError.SYSTEM_ERROR

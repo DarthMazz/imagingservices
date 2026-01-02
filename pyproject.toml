@@ -29,3 +29,11 @@ dev = [
     "pytest-mock>=3.15.1",
     "ruff>=0.14.10",
 ]
+
+[tool.ruff]
+# 最大文字数を120文字に設定
+line-length = 120
+
+[tool.ruff.lint]
+# 行の長さチェック (E501) を有効化
+extend-select = ["E501"]
